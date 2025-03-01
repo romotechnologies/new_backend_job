@@ -26,6 +26,9 @@ cloudinary.v2.config({
 
 app.post("/api/user/register", singleUpload, userCtrl.register);
 app.post("/api/user/login", userCtrl.login);
+app.post("/api/user/update", authenticateUser, singleUpload, userCtrl.updateProfile);
+app.post("/api/user/jobapply/:jobId",authenticateUser,userCtrl.jobApply)
+app.get("/api/user/applied-jobpost",authenticateUser,userCtrl.appliedJobPost)
 
 //forgot-password
 app.post("/api/user/forgot-password", userCtrl.forgotPassword);

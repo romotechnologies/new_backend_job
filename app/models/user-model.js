@@ -5,17 +5,17 @@ const UserSchema = new Schema(
   {
     name: {
       type: String,
-      required: [true, "Please enter your name"],
+      // required: [true, "Please enter your name"],
     },
     email: {
       type: String,
-      required: [true, "Please enter your email"],
+      // required: [true, "Please enter your email"],
       unique: true,
       validate: validator.isEmail,
     },
     password: {
       type: String,
-      required: [true, "Please enter your password"],
+      // required: [true, "Please enter your password"],
       minLength: [6, "password must be atleast 6 characters"],
       select: false,
     },
@@ -30,11 +30,11 @@ const UserSchema = new Schema(
     profilepic: {
       public_id: {
         type: String,
-        required: true,
+        // required: true,
       },
       url: {
         type: String,
-        required: true,
+        // required: true,
       },
     },
     skills: [
@@ -48,7 +48,7 @@ const UserSchema = new Schema(
     },
     phoneno: {
       type: Number,
-      required: [true, "Please enter your phoneno"],
+      // required: [true, "Please enter your phoneno"],
     },
     collegename: {
       type: String,
@@ -56,11 +56,11 @@ const UserSchema = new Schema(
     },
     address: {
       type: String,
-      required: [true, "Please enter your phoneno"],
+      // required: [true, "Please enter your phoneno"],
     },
     zipcode: {
       type: Number,
-      required: [true, "Please enter your zipcode"],
+      // required: [true, "Please enter your zipcode"],
     },
     orgname:{
       type: String,
@@ -71,6 +71,13 @@ const UserSchema = new Schema(
     orgwebsite:{
       type: String,
     },
+    appliedJobPosts: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "JobPost",
+      },
+    ],
+    
 
     resetPasswordToken: String,
     resetPasswordExpire: String,

@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { sendEmail } from "../../utils/sendEmail.js";
 import getDataUri from "../../utils/dataUri.js";
 import cloudinary from "cloudinary";
+import { JobPost } from "../models/jobpost-model.js";
 
 const userCtrl = {};
 
@@ -115,9 +116,6 @@ userCtrl.login = async (req, res) => {
     res.status(500).json({ error: "something went wrong" });
   }
 };
-
-
-
 userCtrl.forgotPassword = async (req, res) => {
   const { email } = req.body;
   try {
@@ -186,5 +184,144 @@ userCtrl.resetPassword = async (req, res) => {
     return res.status(500).json({ error: "something went wrong" });
   }
 };
+
+userCtrl.updateProfile = async (req, res) => {
+  const {
+    name,
+    email,
+    password,
+    role,
+    jobrole,
+    skills,
+    dob,
+    phoneno,
+    collegename,
+    address,
+    zipcode,
+    orgname,
+    orgtype,
+    orgwebsite,
+  } = req.body;
+  const file = req.file; // Optional: file upload for profile picture
+  const userId = req.userId; // Assuming userId is added to the request after authentication
+
+  try {
+    // Find the user by ID
+    let user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // If a new email is provided, check if the email is already taken
+    if (email && email !== user.email) {
+      let userAlready = await User.findOne({ email });
+      if (userAlready)
+        return res.status(400).json({ message: "Email already exists" });
+      user.email = email;
+    }
+
+    // If a new password is provided, hash it
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash(password, salt);
+      user.password = hash;
+    }
+
+    // If a new profile picture is uploaded
+    if (file) {
+      const fileUri = getDataUri(file);
+      const mycloud = await cloudinary.v2.uploader.upload(fileUri.content);
+      user.profilepic = {
+        public_id: mycloud.public_id,
+        url: mycloud.secure_url,
+      };
+    }
+
+    // Update other fields if provided
+    if (name) user.name = name;
+    if (role) user.role = role;
+    if (jobrole) user.jobrole = jobrole;
+    if (skills) user.skills = skills;
+    if (dob) user.dob = dob;
+    if (phoneno) user.phoneno = phoneno;
+    if (collegename) user.collegename = collegename;
+    if (address) user.address = address;
+    if (zipcode) user.zipcode = zipcode;
+    if (orgname) user.orgname = orgname;
+    if (orgtype) user.orgtype = orgtype;
+    if (orgwebsite) user.orgwebsite = orgwebsite;
+
+    // Save the updated user to the database
+    await user.save();
+
+    // Return success response with updated user data
+    return res.status(200).json({
+      message: "Profile updated successfully",
+      user,
+    });
+  } catch (err) {
+    console.error("Error Details:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+userCtrl.jobApply = async (req, res) => {
+  try {
+    const userId = req.userId; // Extract user ID from authentication middleware
+    const { jobId } = req.params;
+    console.log(jobId)
+
+    // Check if the job post exists
+    const job = await JobPost.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+
+    // Find user and check if they already applied
+    const user = await User.findById(userId);
+    if (user.appliedJobPosts.includes(jobId)) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "You have already applied for this job",
+        });
+    }
+
+    // Add the job post to the user's applied jobs
+    user.appliedJobPosts.push(jobId);
+    await user.save();
+
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Job application submitted successfully",
+      });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+userCtrl.appliedJobPost=async (req, res) => {
+  try {
+    const userId = req.userId; // Extract user ID from authentication middleware
+
+    // Find user and populate applied job posts
+    const user = await User.findById(userId).populate({
+      path: "appliedJobPosts",
+      model: "JobPost", // Ensure "JobPost" is the correct model name
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      appliedJobs: user.appliedJobPosts, // This will now contain full job post details
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
 
 export default userCtrl;
